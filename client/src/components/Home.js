@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import "./Home.css";
 import ClockLoader from 'react-spinners/ClockLoader';
+import Banner1 from '../Images/img_1.jpg';
+import Banner2 from '../Images/img_2.jpg';
+import axios from 'axios';
 
 const Home = () => {
+
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
   const [oldprice, setOldprice] = useState("");
@@ -10,13 +14,7 @@ const Home = () => {
   const [ownership, setOwnership] = useState("");
   const [location, setLocation] = useState("");
   const [kms, setKms] = useState("");
-  const [front, setFront] = useState("");
-  const [back, setBack] = useState("");
-  const [left, setLeft] = useState("");
-  const [right, setRight] = useState("");
-  const [accelarate, setAccelarate] = useState("");
-  const [deaccelarate, setDeaccelarate] = useState("");
-  const [finalprice, setFinalprice] = useState("");
+
   const [loading1, setLoading1] = useState(0);
   const [loading2, setLoading2] = useState(0);
   const [loading3, setLoading3] = useState(0);
@@ -24,303 +22,131 @@ const Home = () => {
   const [loading5, setLoading5] = useState(0);
   const [loading6, setLoading6] = useState(0);
 
-  const uploadFront = async (e) => {
-    e.preventDefault();
-    const ImageInput1 = document.querySelector("#inpFile1")
-    const file1 = ImageInput1.files[0]
+  const [finalprice, setFinalprice] = useState("");
 
-    const inpFile = document.getElementById("inpFile1");
-    const previewContainer = document.getElementById("imagePreview1")
-    const previewImage = previewContainer.querySelector(".image-preview__image1"); 
-    const previewDefaultText = previewContainer.querySelector(".image-preview__default-text1");
+  const config = {
+      headers: {
+          'Content-Type': 'multipart/form-data'
+      }
+  }
+
+  const uploadImageToS3 = async (id, setLoading, endpoint) => {
+
+    const file = document.querySelector(`#inpFile${id}`).files[0];
+    const previewContainer = document.getElementById(`imagePreview${id}`);
+    const previewImage = previewContainer.querySelector(`.image-preview__image${id}`);
+    const previewDefaultText = previewContainer.querySelector(`.image-preview__default-text${id}`);
 
     const reader = new FileReader();
     previewDefaultText.style.display = "none";
     previewImage.style.display = "block";
+    previewImage.style.width = "300px"; 
+    previewImage.style.height = "200px";
 
-    reader.addEventListener("load",function(){
-      previewImage.setAttribute("src", this.result);
+    reader.addEventListener("load", function () {
+        previewImage.setAttribute("src", this.result);
     });
+    reader.readAsDataURL(file);
 
-    reader.readAsDataURL(file1);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('brand', brand);
+    formData.append('model', model);
 
-    setLoading1(1);
+    setLoading(1);
+    const response = await axios.post(endpoint, formData, config);
+    console.log(response.data.message);
+    setLoading(2);
+  };
 
-    const {urlfront} = await fetch('http://localhost:5000/s3front', {
-      method : "post",
-      headers : {
-        "Content-Type" : "application/json"
-      },
-      body : JSON.stringify({
-        brand : brand,
-        model : model
-      })
-    }).then(res => res.json());
+  const uploadAudioToS3 = async(id, endpoint) => {
+    const AudioInput = document.querySelector(`#inpFile${id}`);
+    const file = AudioInput.files[0];
 
-    console.log(urlfront);
-    
-    await fetch(urlfront, {
-      method: "PUT",
-      headers: {
-        "Content-Type" : "multipart/form-data",
-      },
-      body: file1
-    })
-    setLoading1(2);
-
+    const response = await axios.post(endpoint, {
+        brand: brand,
+        model: model
+      }, config);
+    const { url } = response.data;
+    await axios.put(url, file, config);
   }
+
+  const uploadFront = async (e) => {
+      e.preventDefault();
+      await uploadImageToS3(1, setLoading1, '/s3front');
+  };
 
   const uploadBack = async (e) => {
-    e.preventDefault();
-    const ImageInput2 = document.querySelector("#inpFile2");
-    const file2 = ImageInput2.files[0];
-    const inpFile = document.getElementById("inpFile2");
-    const previewContainer = document.getElementById("imagePreview2")
-    const previewImage = previewContainer.querySelector(".image-preview__image2"); 
-    const previewDefaultText = previewContainer.querySelector(".image-preview__default-text2");
+      e.preventDefault();
+      await uploadImageToS3(2, setLoading2, '/s3back');
+  };
 
-    const reader = new FileReader();
-    previewDefaultText.style.display = "none";
-    previewImage.style.display = "block";
-
-    reader.addEventListener("load",function(){
-      previewImage.setAttribute("src", this.result);
-    });
-
-    reader.readAsDataURL(file2);
-    setLoading2(1);
-    const {urlback} = await fetch('http://localhost:5000/s3back', {
-      method : "post",
-      headers : {
-        "Content-Type" : "application/json"
-      },
-      body : JSON.stringify({
-        brand : brand,
-        model : model
-      })
-    }).then(res => res.json())
-    
-    await fetch(urlback, {
-      method: "PUT",
-      headers: {
-        "Content-Type" : "multipart/form-data"
-      },
-      body: file2
-    })
-    setLoading2(2);
-  }
-  
   const uploadLeft = async (e) => {
-    e.preventDefault();
-    const ImageInput3 = document.querySelector("#inpFile3");
-    const file3 = ImageInput3.files[0];
-    const inpFile = document.getElementById("inpFile3");
-    const previewContainer = document.getElementById("imagePreview3")
-    const previewImage = previewContainer.querySelector(".image-preview__image3"); 
-    const previewDefaultText = previewContainer.querySelector(".image-preview__default-text3");
+      e.preventDefault();
+      await uploadImageToS3(3, setLoading3, '/s3left');
+  };
 
-    const reader = new FileReader();
-    previewDefaultText.style.display = "none";
-    previewImage.style.display = "block";
-
-    reader.addEventListener("load",function(){
-      previewImage.setAttribute("src", this.result);
-    });
-
-    reader.readAsDataURL(file3);
-    setLoading3(1);
-    const {urlleft} = await fetch('http://localhost:5000/s3left', {
-      method : "post",
-      headers : {
-        "Content-Type" : "application/json"
-      },
-      body : JSON.stringify({
-        brand : brand,
-        model : model
-      })
-    }).then(res => res.json())
-
-    await fetch(urlleft, {
-      method: "PUT",
-      headers: {
-        "Content-Type" : "multipart/form-data"
-      },
-      body: file3
-    })
-    setLoading3(2);
-  }
-  
   const uploadRight = async (e) => {
-    e.preventDefault();
-    const ImageInput4 = document.querySelector("#inpFile4");
-    const file4 = ImageInput4.files[0];
-    const inpFile = document.getElementById("inpFile4");
-    const previewContainer = document.getElementById("imagePreview4")
-    const previewImage = previewContainer.querySelector(".image-preview__image4"); 
-    const previewDefaultText = previewContainer.querySelector(".image-preview__default-text4");
-
-    const reader = new FileReader();
-    previewDefaultText.style.display = "none";
-    previewImage.style.display = "block";
-
-    reader.addEventListener("load",function(){
-      previewImage.setAttribute("src", this.result);
-    });
-
-    reader.readAsDataURL(file4);
-    setLoading4(1);
-    const {urlright} = await fetch('http://localhost:5000/s3right', {
-      method : "post",
-      headers : {
-        "Content-Type" : "application/json"
-      },
-      body : JSON.stringify({
-        brand : brand,
-        model : model
-      })
-    }).then(res => res.json())
-
-    console.log(urlright);
-    
-    await fetch(urlright, {
-      method: "PUT",
-      headers: {
-        "Content-Type" : "multipart/form-data"
-      },
-      body: file4
-    })
-    setLoading4(2);
-  }
-  
-  const evaluate = async (e) => {
-    e.preventDefault();
-    const {result} = await fetch('http://localhost:5000/evaluate', {
-      method : "post",
-      headers : {
-        "Content-Type" : "application/json"
-      },
-      body : JSON.stringify({
-        brand : brand,
-        model : model
-      })
-    }).then(res => res.json())
-  }
+      e.preventDefault();
+      await uploadImageToS3(4, setLoading4, '/s3right');
+  };
 
   const uploadAccelarate = async (e) => {
-    e.preventDefault();
-    const AudioInput5 = document.querySelector("#inpFile5")
-    const file5 = AudioInput5.files[0]
-
-    const {urlaccelarate} = await fetch('http://localhost:5000/s3accelarate', {
-      method : "post",
-      headers : {
-        "Content-Type" : "application/json"
-      },
-      body : JSON.stringify({
-        brand : brand,
-        model : model
-      })
-    }).then(res => res.json())
-
-    // const {urlaccelarate} = await fetch('http://localhost:5000/s3accelarate').then(res => res.json());
-
-    // console.log(urlaccelarate);
-    
-    await fetch(urlaccelarate, {
-      method: "PUT",
-      headers: {
-        "Content-Type" : "multipart/form-data",
-      },
-      body: file5
-    })
-    
-    alert("Accelarating Audio Uploaded");
-  }
+      e.preventDefault();
+      await uploadAudioToS3(5, setLoading5, '/s3accelarate');
+  };
 
   const uploadDeaccelarate = async (e) => {
+      e.preventDefault();
+      await uploadAudioToS3(6, setLoading6, '/s3deaccelarate');
+  };
+
+  const imageComparison = async (e) => {
     e.preventDefault();
-    const AudioInput6 = document.querySelector("#inpFile6")
-    const file6 = AudioInput6.files[0]
-
-    // const {urldeaccelarate} = await fetch('http://localhost:5000/s3deaccelarate').then(res => res.json());
-
-    const {urldeaccelarate} = await fetch('http://localhost:5000/s3deaccelarate', {
-      method : "post",
-      headers : {
-        "Content-Type" : "application/json"
-      },
-      body : JSON.stringify({
-        brand : brand,
-        model : model
-      })
-    }).then(res => res.json())
-
-    console.log(urldeaccelarate);
-    
-    await fetch(urldeaccelarate, {
-      method: "PUT",
+    await axios.post('/evaluateImage', {
+      brand: brand,
+      model: model
+    }, {
       headers: {
-        "Content-Type" : "multipart/form-data",
-      },
-      body: file6
-    })
-    
-    alert("Deaccelarating Audio Uploaded");
+          'Content-Type': 'application/json'
+      }
+    });
   }
 
-  const audioevaluate = async (e) => {
+  const audioComparison = async (e) => {
     e.preventDefault();
-    const {result} = await fetch('http://localhost:5000/evaluateaudio', {
-      method : "post",
-      headers : {
-        "Content-Type" : "application/json"
-      },
-      body : JSON.stringify({
-        brand : brand,
-        model : model
-      })
-    }).then(res => res.json())
   }
 
   function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  const audiofinalscore = async (e) => {
+  const finalScore = async (e) => {
     e.preventDefault();
-    console.log("Step 1");
     setLoading6(1);
-    const res = fetch("http://localhost:5000/writefinalscore", {
-      method : "post",
-      headers : {
-        "Content-Type" : "application/json"
-      },
-      body : JSON.stringify({
-        brand : brand,
-        model : model,
-        oldprice : oldprice,
-        yearsold : oldyears,
-        ownership : ownership,
-        location : location,
-        kmsdriven : kms
-      })
-    });
+    await axios.post("/writefinalscore", {
+      brand: brand,
+      model: model,
+      oldprice: oldprice,
+      yearsold: oldyears,
+      ownership: ownership,
+      location: location,
+      kmsdriven: kms
+    }, config);
 
-    const size = await fetch('http://localhost:5000/getsize');
-    const sizee = await size.json();
-    const x = sizee['Size'];
+    const size = await axios.get('/getsize');
+    const size_json = await size.json();
+    const total_entries = size_json['Size'];
 
-    if(x > 1000){
-      console.log("greater than 1000");
-      const data1 = await fetch('http://localhost:5000/mldisplay');
+    if(total_entries > 1000){
+      const data1 = await axios.get('/mldisplay');
       const target1 = await data1.json();
       setFinalprice(target1['Finalscoreml']);
     }else{
-      console.log("less than 1000");
-      const result = await fetch('http://localhost:5000/finalscore');
-      const y = await result.json();
+      const result = await axios.get('/finalscore');
+      await result.json();
       await sleep(5000);
-      const data = await fetch('http://localhost:5000/display');
+      const data = await axios.get('/display');
       const target = await data.json();
       setFinalprice(target['Finalscore']);
     }
@@ -333,10 +159,10 @@ const Home = () => {
       <div id="carouselExampleInterval" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-inner">
           <div class="carousel-item active" data-bs-interval="2000">
-            <img src={ require('../../src/banner3.jpg') } class="d-block w-100" alt="..." />
+            <img src={Banner1} class="d-block w-100" alt="..." />
           </div>
           <div class="carousel-item" data-bs-interval="2000">
-            <img src={ require('../../src/honda_cb350.jpg') } class="d-block w-100" alt="..." />
+            <img src={Banner2} class="d-block w-100" alt="..." />
           </div>
         </div>
         <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval" data-bs-slide="prev">
@@ -497,14 +323,13 @@ const Home = () => {
                   type="file"
                   id="inpFile1"
                   className="inner-css"
-                  onChange={(e) => setFront(e.target.value)}
                   accept="image/*"
                 />
                 <div id="change-select-div">
                   {
                     loading1 === 0 ? <button type = "submit" id = "btnUpload1" onClick={uploadFront}>Upload Front Image</button>
                     : loading1 === 1 ? <ClockLoader className="loader" size={30} color={'#FFFFFF'} loading1={loading1 === 1}/>
-                    : <button type = "submit" id = "btnUpload1" onClick={uploadFront}>Upload Success <b>&#x2713;</b> </button>
+                    : <button id = "btnUpload1">Upload Success<b>&#x2713;</b> </button>
                   }
                 </div>
               </div>
@@ -518,14 +343,13 @@ const Home = () => {
                   type="file"
                   id="inpFile2"
                   className="inner-css"
-                  onChange={(e) => setBack(e.target.value)}
                   accept="image/*"
                 />
                 <div id="change-select-div">
                   {
                     loading2 === 0 ? <button type = "submit" id = "btnUpload1" onClick={uploadBack}>Upload Back Image</button>
                     : loading2 === 1 ? <ClockLoader className="loader" size={30} color={'#FFFFFF'} loading2={loading2 === 1}/>
-                    : <button type = "submit" id = "btnUpload1" onClick={uploadBack}>Upload Success <b>&#x2713;</b> </button>
+                    : <button id = "btnUpload1">Upload Success<b>&#x2713;</b> </button>
                   }
                 </div>
               </div>
@@ -541,14 +365,13 @@ const Home = () => {
                   type="file"
                   id="inpFile3"
                   className="inner-css"
-                  onChange={(e) => setLeft(e.target.value)}
                   accept="image/*"
                 />
                 <div id="change-select-div">
                   {
                     loading3 === 0 ? <button type = "submit" id = "btnUpload1" onClick={uploadLeft}>Upload Left Image</button>
                     : loading3 === 1 ? <ClockLoader className="loader" size={30} color={'#FFFFFF'} loading3={loading3 === 1}/>
-                    : <button type = "submit" id = "btnUpload1" onClick={uploadLeft}>Upload Success <b>&#x2713;</b> </button>
+                    : <button id = "btnUpload1">Upload Success<b>&#x2713;</b> </button>
                   }
                 </div>
               </div>
@@ -562,23 +385,22 @@ const Home = () => {
                   type="file"
                   id="inpFile4"
                   className="inner-css"
-                  onChange={(e) => setRight(e.target.value)}
                   accept="image/*"
                 />
                 <div id="change-select-div">
                   {
                     loading4 === 0 ? <button type = "submit" id = "btnUpload1" onClick={uploadRight}>Upload Right Image</button>
                     : loading4 === 1 ? <ClockLoader className="loader" size={30} color={'#FFFFFF'} loading4={loading4 === 1}/>
-                    : <button type = "submit" id = "btnUpload1" onClick={uploadRight}>Upload Success <b>&#x2713;</b> </button>
+                    : <button id = "btnUpload1">Upload Success<b>&#x2713;</b> </button>
                   }
                   
                 </div>
               </div>
             </div>
             {
-              loading5 === 0 ? <button type = "submit" className = "btn btn-light" id = "right-image" onClick={evaluate}>Upload Images</button>
+              loading5 === 0 ? <button type = "submit" className = "btn btn-light" id = "right-image" onClick={imageComparison}>Evaluate Images</button>
               : loading5 === 1 ? <ClockLoader className="loader" size={30} color={'#FFFFFF'} loading5={loading5 === 1}/>
-              : <button type = "submit" className = "btn btn-light" id = "right-image" onClick={evaluate}>Upload Success <b>&#x2713;</b> </button>
+              : <button className = "btn btn-light" id = "right-image"> Evaluation Completed <b>&#x2713;</b> </button>
             }
           </div>
 
@@ -597,7 +419,6 @@ const Home = () => {
                   type="file"
                   id="inpFile5"
                   className="inner-css"
-                  onChange={(e) => setAccelarate(e.target.value)}
                   accept="audio/*"
                 />
                 <div id="change-select-div-accelarate">
@@ -611,7 +432,6 @@ const Home = () => {
                   type="file"
                   id="inpFile6"
                   className="inner-css"
-                  onChange={(e) => setDeaccelarate(e.target.value)}
                   accept="audio/*"
                 />
                 <div id= "change-select-div-accelarate">
@@ -622,16 +442,16 @@ const Home = () => {
             <button
               type="submit"
               className="btn btn-dark"
-              onClick={audioevaluate}
+              onClick={audioComparison}
               id="audio-button"
             >
               Upload Audio
             </button>
           </div>
           {
-            loading6 === 0 ? <button type = "submit" className = "btn btn-dark" id = "final-score-button" onClick={audiofinalscore}>Calculate Final Score</button>
+            loading6 === 0 ? <button type = "submit" className = "btn btn-dark" id = "final-score-button" onClick={finalScore}>Calculate Final Score</button>
             : loading6 === 1 ? <ClockLoader className="loader-final" size={30} color={'#000000'} loading6={loading6 === 1}/>
-            : <button type = "submit" className = "btn btn-dark" id = "final-score-button" onClick={audiofinalscore}>Re-Evaluate <b>&#x2713;</b> </button>
+            : <button type = "submit" className = "btn btn-dark" id = "final-score-button" onClick={finalScore}>Re-Evaluate <b>&#x2713;</b> </button>
           }
           {
             loading6 == 2 ? <div className="score"> <div className="final-score-center">The Final Price is {finalprice}</div></div> : <div></div>

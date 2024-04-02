@@ -1,17 +1,18 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const app = express();
-const PORT = 5000;
-const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const upload = require('express-fileupload');
 const bodyParser = require("body-parser");
 const cors = require('cors');
 const spawner = require('child_process').spawn;
 const fs = require('fs');
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
-app.use(require("./router/Auth"));
+dotenv.config({path : 'config.env'});
+
+const PORT = 5000;
+
 app.use(cors());
 app.use(upload());
 app.use(express.json());
@@ -19,54 +20,155 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended : true}));
 app.use(bodyParser.json());
 
-require("./db/Mongoose_Connection");
-dotenv.config({path : './config.env'});
-const generateUploadURLFront = require("./S3_Front_View");
-const generateUploadURLBack = require("./S3_Back_View");
-const generateUploadURLLeft = require("./S3_Left_View");
-const generateUploadURLRight = require("./S3_Right_View");
-const generateUploadURLAccelarate = require("./S3_Accelarate.js");
-const generateUploadURLDeaccelarate = require("./S3_Deaccelarate.js");
+const region = process.env.AWS_BUCKET_REGION
+const imageBucketName = process.env.AWS_IMAGE_BUCKET_NAME
+const audioBucketName = process.env.AWS_AUDIO_BUCKETE_NAME 
+const accessKeyId = process.env.AWS_ACCESS_KEY
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
+
+const s3 = new S3Client({
+    credentials: {
+        accessKeyId: accessKeyId,
+        secretAccessKey: secretAccessKey,
+    },
+    region: region
+});
 
 app.post('/s3front', async (req, res) => {
-    const {brand, model} = req.body;
-    const urlfront = await generateUploadURLFront(brand, model)
-    res.send({urlfront});
-})
+    const file = req.files.file;
+    const brand = req.body.brand;
+    const model = req.body.model;
+
+    const imageName = brand + "_" + model + "_" + "front";
+    const params = {
+        Bucket: imageBucketName,
+        Key: imageName,
+        Body: file.data,
+        ContentType: file.mimetype,
+    }
+
+    const command = new PutObjectCommand(params);
+    try{
+        await s3.send(command);
+        res.json({ message: 'File Uploaded Successfully' })
+    }catch{
+        res.json({ message: 'Error When Uploading File' })
+    }
+});
 
 app.post('/s3back', async (req, res) => {
-    const {brand, model} = req.body;
-    const urlback = await generateUploadURLBack(brand, model)
-    res.send({urlback})
-})
+    const file = req.files.file;
+    const brand = req.body.brand;
+    const model = req.body.model;
+
+    const imageName = brand + "_" + model + "_" + "back";
+    const params = {
+        Bucket: imageBucketName,
+        Key: imageName,
+        Body: file.data,
+        ContentType: file.mimetype,
+    }
+
+    const command = new PutObjectCommand(params);
+    try{
+        await s3.send(command);
+        res.json({ message: 'File Uploaded Successfully' })
+    }catch{
+        res.json({ message: 'Error When Uploading File' })
+    }
+});
 
 app.post('/s3left', async (req, res) => {
-    const {brand, model} = req.body;
-    const urlleft = await generateUploadURLLeft(brand, model)
-    res.send({urlleft})
-})
+    const file = req.files.file;
+    const brand = req.body.brand;
+    const model = req.body.model;
+
+    const imageName = brand + "_" + model + "_" + "left";
+    const params = {
+        Bucket: imageBucketName,
+        Key: imageName,
+        Body: file.data,
+        ContentType: file.mimetype,
+    }
+
+    const command = new PutObjectCommand(params);
+    try{
+        await s3.send(command);
+        res.json({ message: 'File Uploaded Successfully' })
+    }catch{
+        res.json({ message: 'Error When Uploading File' })
+    }
+});
 
 app.post('/s3right', async (req, res) => {
-    const {brand, model} = req.body;
-    const urlright = await generateUploadURLRight(brand, model)
-    res.send({urlright})
-})
+    const file = req.files.file;
+    const brand = req.body.brand;
+    const model = req.body.model;
+
+    const imageName = brand + "_" + model + "_" + "right";
+    const params = {
+        Bucket: imageBucketName,
+        Key: imageName,
+        Body: file.data,
+        ContentType: file.mimetype,
+    }
+
+    const command = new PutObjectCommand(params);
+    try{
+        await s3.send(command);
+        res.json({ message: 'File Uploaded Successfully' })
+    }catch{
+        res.json({ message: 'Error When Uploading File' })
+    }
+});
 
 app.post('/s3accelarate', async (req, res) => {
-    const {brand, model} = req.body;
-    const urlaccelarate = await generateUploadURLAccelarate(brand, model)
-    res.send({urlaccelarate})
-})
+    const file = req.files.file;
+    const brand = req.body.brand;
+    const model = req.body.model;
+
+    const audioName = brand + "_" + model + "_" + "accelarate";
+    const params = {
+        Bucket: audioBucketName,
+        Key: audioName,
+        Body: file.data,
+        ContentType: file.mimetype,
+    }
+
+    const command = new PutObjectCommand(params);
+    try{
+        await s3.send(command);
+        res.json({ message: 'File Uploaded Successfully' })
+    }catch{
+        res.json({ message: 'Error When Uploading File' })
+    }
+});
 
 app.post('/s3deaccelarate', async (req, res) => {
-    const {brand, model} = req.body;
-    const urldeaccelarate = await generateUploadURLDeaccelarate(brand, model)
-    res.send({urldeaccelarate})
-})
+    const file = req.files.file;
+    const brand = req.body.brand;
+    const model = req.body.model;
 
-app.post('/evaluate', async (req, res) => {
+    const audioName = brand + "_" + model + "_" + "deaccelarate";
+    const params = {
+        Bucket: audioBucketName,
+        Key: audioName,
+        Body: file.data,
+        ContentType: file.mimetype,
+    }
+
+    const command = new PutObjectCommand(params);
+    try{
+        await s3.send(command);
+        res.json({ message: 'File Uploaded Successfully' })
+    }catch{
+        res.json({ message: 'Error When Uploading File' })
+    }
+});
+
+app.post('/evaluateImage', async (req, res) => {
     const {brand, model} = req.body;
-    const child = spawner('python', ['C:/Users/HarshGupta/Desktop/Tvs-Credit-It-Challenge/server/Image_Download_Compare.py', brand, model]);
+    const child = spawner('python', ['./Image_Audio_Comparison/Image_Comparison.py', brand, model]);
 
     child.stdout.on('data', (data) => {
         console.log(`stdout : ${data}`);
@@ -80,7 +182,7 @@ app.post('/evaluate', async (req, res) => {
         console.log(`child process exited with code ${code}`);
     });
 
-    res.send({"message" : "python file executed successfully"});
+    res.send({"message" : "Image Comparison Done Successfully"});
 })
 
 app.post('/evaluateaudio', async (req, res) => {
